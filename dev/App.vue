@@ -21,7 +21,7 @@ export default defineComponent({
     const imageCount = 100 // 100 image
     const images = Array.from({ length: imageCount }, (_, i) => {
       const index = String(i + 1).padStart(3, '0')
-      return `/images/${index}.jpg`
+      return new URL(`./images/${index}.jpg`, import.meta.url).href
     })
 
     return {
