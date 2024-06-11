@@ -4,7 +4,7 @@
     ref="productViewer"
     @mouseup="stopDrag"
     @mousedown="startDrag"
-    @mouseleave="stopDrag"
+    @mouseleave="stopDrag($event, true)"
   >
     <div class="pointer-events-none">
       <img :src="currentImage" alt="">
@@ -25,6 +25,20 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       required: true,
     },
+    /**
+     * Drag sensitivity
+     */
+    sensitivity: {
+      type: Number,
+      default: 3,
+    },
+    /**
+     * Rolling speed
+     */
+    speed: {
+      type: Number,
+      default: 20,
+    },
   },
   data() {
     return {
@@ -41,9 +55,13 @@ export default defineComponent({
        */
       startX: 0 as number,
       /**
-       * Sensitivity of dragging
+       * RollingInterval
        */
-      sensitivity: 2 as number,
+      rollingInterval: null as ReturnType<typeof setInterval> | null,
+      /**
+       * RollingInterval
+       */
+      startRollingInterval: null as ReturnType<typeof setInterval> | null,
     }
   },
   computed: {
@@ -59,14 +77,37 @@ export default defineComponent({
       this.startX = event.clientX
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
-      this.currentX = event.clientX
+      if (this.rollingInterval !== null) {
+        clearInterval(this.rollingInterval)
+      }
     },
-    stopDrag() {
+    stopDrag(_: MouseEvent, isLeave: boolean = false) {
       const viewer = this.$refs.productViewer as HTMLElement
-
       viewer.removeEventListener('mousemove', this.onDrag)
+
+      if (isLeave) {
+        return true
+      }
+
+      const intervalDuration = Math.abs(this.startX - this.currentX) * 1.5
+
+      const deltaX = this.startX - this.currentX
+      const direction = deltaX > 0 ? 1 : -1
+
+      this.rollingInterval = setInterval(() => {
+        this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
+      }, this.speed)
+
+      setTimeout(() => {
+        if (this.rollingInterval !== null) {
+          clearInterval(this.rollingInterval)
+        }
+      }, intervalDuration)
     },
     onDrag(event: MouseEvent) {
+      if (this.startRollingInterval !== null) {
+        clearInterval(this.startRollingInterval)
+      }
       const deltaX = event.clientX - this.currentX
 
       if (Math.abs(deltaX) > this.sensitivity) {
@@ -74,6 +115,13 @@ export default defineComponent({
         this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
         this.currentX = event.clientX
       }
+
+      this.startRollingInterval = setInterval(() => {
+        this.startX = event.clientX
+        if (this.startRollingInterval !== null) {
+          clearInterval(this.startRollingInterval)
+        }
+      }, 20)
     },
   },
 })

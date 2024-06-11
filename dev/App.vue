@@ -5,6 +5,8 @@
   <product-viewer
     class="product-viewer-wrapper"
     :images="images"
+    :sensitivity="3"
+    :speed="20"
   />
 </template>
 
