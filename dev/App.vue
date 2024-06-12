@@ -5,8 +5,9 @@
   <product-viewer
     class="product-viewer-wrapper"
     :images="images"
-    :sensitivity="3"
+    :sensitivity="5"
     :speed="20"
+    :auto-start="true"
   />
 </template>
 
@@ -37,7 +38,6 @@ export default defineComponent({
 .product-viewer-wrapper {
   width: 50rem;
   height: 30rem;
-  background-color: #0a3622;
   cursor: grab;
   display: flex;
   align-items: center;

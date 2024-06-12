@@ -5,9 +5,17 @@
     @mouseup="stopDrag"
     @mousedown="startDrag"
     @mouseleave="stopDrag($event, true)"
+    @touchstart="startDrag"
+    @touchend="stopDrag"
   >
     <div class="pointer-events-none">
-      <img :src="currentImage" alt="">
+      <img
+        v-for="(image, index) in images"
+        :key="index"
+        :class="{'hide-product-viewer-image': currentImageIndex !== index}"
+        :src="image"
+        alt=""
+      >
     </div>
   </div>
 </template>
@@ -39,6 +47,13 @@ export default defineComponent({
       type: Number,
       default: 20,
     },
+    /**
+     * Autostart
+     */
+    autoStart: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -62,28 +77,69 @@ export default defineComponent({
        * RollingInterval
        */
       startRollingInterval: null as ReturnType<typeof setInterval> | null,
+      /**
+       * RollingInterval
+       */
+      autoStartInterval: null as ReturnType<typeof setInterval> | null,
+      /**
+       * Product view intersection observer
+       */
+      observer: null as IntersectionObserver | null,
+      /**
+       * Is intersected already
+       */
+      isIntersected: false,
     }
   },
-  computed: {
-    /**
-     * Current image path
-     */
-    currentImage(): string {
-      return this.images[this.currentImageIndex]
-    },
+  mounted() {
+    this.createObserver()
+  },
+  beforeUnmount() {
+    this.observer?.disconnect()
   },
   methods: {
-    startDrag(event: MouseEvent) {
-      this.startX = event.clientX
+    /**
+     * Starts the view automatically
+     */
+    startAutoPlay() {
+      if (!this.autoStart) {
+        return
+      }
+
+      this.autoStartInterval = setInterval(() => {
+        this.currentImageIndex = (this.currentImageIndex + 1 + this.images.length) % this.images.length
+      }, 30)
+
+      setTimeout(() => {
+        if (this.autoStartInterval !== null) {
+          clearInterval(this.autoStartInterval)
+        }
+      }, 2000)
+    },
+    /**
+     * Starts dragging
+     *
+     * @param event
+     */
+    startDrag(event: MouseEvent | TouchEvent) {
+      this.clearIntervals()
+      this.startX = 'clientX' in event ? event.clientX : event.touches[0].clientX
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
+      viewer.addEventListener('touchmove', this.onDrag)
       if (this.rollingInterval !== null) {
         clearInterval(this.rollingInterval)
       }
     },
-    stopDrag(_: MouseEvent, isLeave: boolean = false) {
+    /**
+     * Stops dragging
+     * @param _
+     * @param isLeave
+     */
+    stopDrag(_: MouseEvent | TouchEvent, isLeave: boolean = false) {
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.removeEventListener('mousemove', this.onDrag)
+      viewer.removeEventListener('touchmove', this.onDrag)
 
       if (isLeave) {
         return true
@@ -104,24 +160,70 @@ export default defineComponent({
         }
       }, intervalDuration)
     },
-    onDrag(event: MouseEvent) {
+    /**
+     * Action while dragging
+     *
+     * @param event
+     */
+    onDrag(event: MouseEvent | TouchEvent) {
       if (this.startRollingInterval !== null) {
         clearInterval(this.startRollingInterval)
       }
-      const deltaX = event.clientX - this.currentX
+      const clientX = 'clientX' in event ? event.clientX : event.touches[0].clientX
+      const deltaX = clientX - this.currentX
 
       if (Math.abs(deltaX) > this.sensitivity) {
         const direction = deltaX > 0 ? -1 : 1
         this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
-        this.currentX = event.clientX
+        this.currentX = clientX
       }
 
       this.startRollingInterval = setInterval(() => {
-        this.startX = event.clientX
+        this.startX = clientX
         if (this.startRollingInterval !== null) {
           clearInterval(this.startRollingInterval)
         }
       }, 20)
+    },
+    /**
+     * Clears intervals
+     */
+    clearIntervals() {
+      if (this.autoStartInterval !== null) {
+        clearInterval(this.autoStartInterval)
+      }
+      if (this.rollingInterval !== null) {
+        clearInterval(this.rollingInterval)
+      }
+      if (this.startRollingInterval !== null) {
+        clearInterval(this.startRollingInterval)
+      }
+    },
+    /**
+     * Creates an observer which is checking is the div rendered
+     */
+    createObserver() {
+      const options = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 1.0,
+      }
+
+      this.observer = new IntersectionObserver(this.handleIntersect, options)
+      const viewer = this.$refs.productViewer as HTMLElement
+      this.observer.observe(viewer)
+    },
+    /**
+     * Handling intersect
+     * @param entries
+     */
+    handleIntersect(entries: IntersectionObserverEntry[]) {
+      entries.forEach(entry => {
+        if (!this.isIntersected && entry.isIntersecting) {
+          this.startAutoPlay()
+          this.isIntersected = true
+        }
+      })
     },
   },
 })
@@ -129,11 +231,20 @@ export default defineComponent({
 
 <style lang="css" scoped>
 .pointer-events-none {
+  position: relative;
   pointer-events: none;
   user-select: none;
+  width: 100%;
+  height: 100%;
 
   img {
     max-width: 100%;
+    position: absolute;
+    top: 0;
+  }
+
+  .hide-product-viewer-image {
+    opacity: 0;
   }
 }
 </style>
