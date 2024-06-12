@@ -6,7 +6,7 @@
     class="product-viewer-wrapper"
     :images="images"
     :sensitivity="5"
-    :speed="20"
+    :speed="5"
     :auto-start="true"
   />
 </template>

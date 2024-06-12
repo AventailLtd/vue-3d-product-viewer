@@ -54,6 +54,13 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /**
+     * Auto rolling speed
+     */
+    autoRollingSpeed: {
+      type: Number,
+      default: 75,
+    },
   },
   data() {
     return {
@@ -73,6 +80,10 @@ export default defineComponent({
        * RollingInterval
        */
       rollingInterval: null as ReturnType<typeof setInterval> | null,
+      /**
+       * Is swipe rolling done
+       */
+      rollingDone: false as boolean,
       /**
        * RollingInterval
        */
@@ -108,13 +119,7 @@ export default defineComponent({
 
       this.autoStartInterval = setInterval(() => {
         this.currentImageIndex = (this.currentImageIndex + 1 + this.images.length) % this.images.length
-      }, 30)
-
-      setTimeout(() => {
-        if (this.autoStartInterval !== null) {
-          clearInterval(this.autoStartInterval)
-        }
-      }, 2000)
+      }, this.autoRollingSpeed)
     },
     /**
      * Starts dragging
@@ -123,13 +128,11 @@ export default defineComponent({
      */
     startDrag(event: MouseEvent | TouchEvent) {
       this.clearIntervals()
+      this.rollingDone = true
       this.startX = 'clientX' in event ? event.clientX : event.touches[0].clientX
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
       viewer.addEventListener('touchmove', this.onDrag)
-      if (this.rollingInterval !== null) {
-        clearInterval(this.rollingInterval)
-      }
     },
     /**
      * Stops dragging
@@ -145,20 +148,32 @@ export default defineComponent({
         return true
       }
 
-      const intervalDuration = Math.abs(this.startX - this.currentX) * 1.5
+      this.rollingDone = false
+      const intervalDuration = Math.abs(this.startX - this.currentX) * 3
 
       const deltaX = this.startX - this.currentX
       const direction = deltaX > 0 ? 1 : -1
 
-      this.rollingInterval = setInterval(() => {
-        this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
-      }, this.speed)
+      this.slowRolling(this.speed, direction)
 
       setTimeout(() => {
-        if (this.rollingInterval !== null) {
-          clearInterval(this.rollingInterval)
-        }
+        this.rollingDone = true
       }, intervalDuration)
+    },
+    /**
+     * Slows rolling if swiped
+     * @param speed
+     * @param direction
+     */
+    slowRolling(speed: number, direction: number) {
+      if (this.rollingDone) {
+        return
+      }
+
+      setTimeout(() => {
+        this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
+        this.slowRolling(speed + 1, direction)
+      }, speed)
     },
     /**
      * Action while dragging
@@ -191,9 +206,6 @@ export default defineComponent({
     clearIntervals() {
       if (this.autoStartInterval !== null) {
         clearInterval(this.autoStartInterval)
-      }
-      if (this.rollingInterval !== null) {
-        clearInterval(this.rollingInterval)
       }
       if (this.startRollingInterval !== null) {
         clearInterval(this.startRollingInterval)
