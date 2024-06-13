@@ -4,7 +4,7 @@
     ref="productViewer"
     @mouseup="stopDrag"
     @mousedown="startDrag"
-    @mouseleave="stopDrag($event, true)"
+    @mouseleave="stopDrag"
     @touchstart="startDrag"
     @touchend="stopDrag"
   >
@@ -34,13 +34,6 @@ export default defineComponent({
       required: true,
     },
     /**
-     * Drag sensitivity
-     */
-    sensitivity: {
-      type: Number,
-      default: 3,
-    },
-    /**
      * Rolling speed
      */
     speed: {
@@ -55,39 +48,28 @@ export default defineComponent({
       default: false,
     },
     /**
-     * Auto rolling speed
+     * Seconds, under mousemove is recognized as swipe
      */
-    autoRollingSpeed: {
+    swipeSensitivity: {
       type: Number,
-      default: 75,
+      default: 0.30,
     },
   },
   data() {
     return {
       /**
-       * Currently rendered picture index
+       * Auto rolling speed degree/sec
+       * NOTE: starting value is from prop, later this value will change, that's why it's stored in data
        */
-      currentImageIndex: 0 as number,
-      /**
-       * Current X position of mouse
-       */
-      currentX: 0 as number,
+      speedData: this.speed,
       /**
        * Start dragging position of mouse
        */
       startX: 0 as number,
       /**
-       * RollingInterval
+       * Start degree of rotation
        */
-      rollingInterval: null as ReturnType<typeof setInterval> | null,
-      /**
-       * Is swipe rolling done
-       */
-      rollingDone: false as boolean,
-      /**
-       * RollingInterval
-       */
-      startRollingInterval: null as ReturnType<typeof setInterval> | null,
+      startAngle: 0 as number,
       /**
        * RollingInterval
        */
@@ -99,8 +81,33 @@ export default defineComponent({
       /**
        * Is intersected already
        */
-      isIntersected: false,
+      isIntersected: false as boolean,
+      /**
+       * Actual view degree (0-360)
+       */
+      angle: 0 as number,
+      /**
+       * Mouse button clicked
+       */
+      mouseDownTimer: 0 as number,
+      /**
+       * When mouse button released
+       */
+      mouseUpTimer: 0 as number,
     }
+  },
+  computed: {
+    currentImageIndex(): number {
+      // angle increment is calculated of 360 degrees which is divided with the number of used pictures
+      const angleIncrement = 360 / this.images.length
+      const index = Math.floor(this.angle / angleIncrement)
+      // index can be negative, then we need this.images.length + index. Ex: 100 + (-1)
+      return index >= 0 ? index : this.images.length + index
+    },
+    rotateDensity() {
+      // TODO: video density degree
+      return 20
+    },
   },
   mounted() {
     this.createObserver()
@@ -112,93 +119,59 @@ export default defineComponent({
     /**
      * Starts the view automatically
      */
-    startAutoPlay() {
-      if (!this.autoStart) {
-        return
-      }
-
+    startAutoRolling(autoSlow: boolean = true): void {
       this.autoStartInterval = setInterval(() => {
-        this.currentImageIndex = (this.currentImageIndex + 1 + this.images.length) % this.images.length
-      }, this.autoRollingSpeed)
+        if (autoSlow) {
+          this.speedData *= 0.98
+          if (Math.abs(this.speedData) < this.rotateDensity) {
+            this.clearIntervals()
+            return
+          }
+        }
+        this.angle = (this.angle + this.speedData / 100) % 360
+      }, 10)
     },
     /**
      * Starts dragging
-     *
-     * @param event
      */
-    startDrag(event: MouseEvent | TouchEvent) {
+    startDrag(event: MouseEvent | TouchEvent): void {
+      this.startAngle = this.angle
       this.clearIntervals()
-      this.rollingDone = true
       this.startX = 'clientX' in event ? event.clientX : event.touches[0].clientX
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
       viewer.addEventListener('touchmove', this.onDrag)
+      this.mouseDownTimer = performance.now()
     },
     /**
      * Stops dragging
-     * @param _
-     * @param isLeave
      */
-    stopDrag(_: MouseEvent | TouchEvent, isLeave: boolean = false) {
+    stopDrag(event: MouseEvent | TouchEvent): void {
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.removeEventListener('mousemove', this.onDrag)
       viewer.removeEventListener('touchmove', this.onDrag)
+      this.mouseUpTimer = performance.now()
 
-      if (isLeave) {
-        return true
-      }
+      const elapsedSec = (this.mouseUpTimer - this.mouseDownTimer) / 1000
 
-      this.rollingDone = false
-      const intervalDuration = Math.abs(this.startX - this.currentX) * 3
-
-      const deltaX = this.startX - this.currentX
-      const direction = deltaX > 0 ? 1 : -1
-
-      this.slowRolling(this.speed, direction)
-
-      setTimeout(() => {
-        this.rollingDone = true
-      }, intervalDuration)
-    },
-    /**
-     * Slows rolling if swiped
-     * @param speed
-     * @param direction
-     */
-    slowRolling(speed: number, direction: number) {
-      if (this.rollingDone) {
+      if (elapsedSec > this.swipeSensitivity) {
+        // not swiped after a time
         return
       }
 
-      setTimeout(() => {
-        this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
-        this.slowRolling(speed + 1, direction)
-      }, speed)
+      const clientX = 'clientX' in event ? event.clientX : event.touches[0].clientX
+
+      this.speedData = (clientX - this.startX) / elapsedSec * -1 / 5
+      this.startAutoRolling()
     },
     /**
      * Action while dragging
-     *
-     * @param event
      */
-    onDrag(event: MouseEvent | TouchEvent) {
-      if (this.startRollingInterval !== null) {
-        clearInterval(this.startRollingInterval)
-      }
+    onDrag(event: MouseEvent | TouchEvent): void {
       const clientX = 'clientX' in event ? event.clientX : event.touches[0].clientX
-      const deltaX = clientX - this.currentX
+      const deltaX = (clientX - this.startX) / 10 // pixel to angle
 
-      if (Math.abs(deltaX) > this.sensitivity) {
-        const direction = deltaX > 0 ? -1 : 1
-        this.currentImageIndex = (this.currentImageIndex + direction + this.images.length) % this.images.length
-        this.currentX = clientX
-      }
-
-      this.startRollingInterval = setInterval(() => {
-        this.startX = clientX
-        if (this.startRollingInterval !== null) {
-          clearInterval(this.startRollingInterval)
-        }
-      }, 20)
+      this.angle = (this.startAngle - deltaX) % 360
     },
     /**
      * Clears intervals
@@ -207,14 +180,11 @@ export default defineComponent({
       if (this.autoStartInterval !== null) {
         clearInterval(this.autoStartInterval)
       }
-      if (this.startRollingInterval !== null) {
-        clearInterval(this.startRollingInterval)
-      }
     },
     /**
      * Creates an observer which is checking is the div rendered
      */
-    createObserver() {
+    createObserver(): void {
       const options = {
         root: null,
         rootMargin: '0px',
@@ -227,12 +197,14 @@ export default defineComponent({
     },
     /**
      * Handling intersect
-     * @param entries
      */
-    handleIntersect(entries: IntersectionObserverEntry[]) {
+    handleIntersect(entries: IntersectionObserverEntry[]): void {
       entries.forEach(entry => {
         if (!this.isIntersected && entry.isIntersecting) {
-          this.startAutoPlay()
+          if (this.autoStart) {
+            this.startAutoRolling(false)
+          }
+
           this.isIntersected = true
         }
       })
