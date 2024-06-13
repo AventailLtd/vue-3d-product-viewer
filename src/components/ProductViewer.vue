@@ -79,10 +79,6 @@ export default defineComponent({
        */
       observer: null as IntersectionObserver | null,
       /**
-       * Is intersected already
-       */
-      isIntersected: false as boolean,
-      /**
        * Actual view degree (0-360)
        */
       angle: 0 as number,
@@ -111,9 +107,6 @@ export default defineComponent({
   },
   mounted() {
     this.createObserver()
-  },
-  beforeUnmount() {
-    this.observer?.disconnect()
   },
   methods: {
     /**
@@ -217,12 +210,12 @@ export default defineComponent({
      */
     handleIntersect(entries: IntersectionObserverEntry[]): void {
       entries.forEach(entry => {
-        if (!this.isIntersected && entry.isIntersecting) {
+        if (entry.isIntersecting) {
           if (this.autoStart) {
             this.startAutoRolling(false)
           }
 
-          this.isIntersected = true
+          this.observer?.disconnect()
         }
       })
     },
