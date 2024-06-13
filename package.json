@@ -1,5 +1,5 @@
 {
-  "name": "@aventailltd/vue-3d-product-viewer",
+  "name": "vue-3d-product-viewer",
   "version": "0.0.1",
   "description": "3d product viewer",
   "module": "./dist/vue-3d-product-viewer.js",
