@@ -238,6 +238,7 @@ export default defineComponent({
     position: relative;
     max-width: 100%;
     top: 0;
+    left: 0;
   }
 
   .hide-product-viewer-image {
