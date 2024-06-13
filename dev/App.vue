@@ -1,13 +1,15 @@
 <template>
-  <h1>
-    3D Product viewer dev
-  </h1>
-  <product-viewer
-    class="product-viewer"
-    :images="images"
-    :speed="30"
-    :auto-start="true"
-  />
+  <div>
+    <h1>
+      3D Product viewer dev
+    </h1>
+    <product-viewer
+      class="product-viewer"
+      :images="images"
+      :speed="30"
+      :auto-start="true"
+    />
+  </div>
 </template>
 
 <script lang="ts">
