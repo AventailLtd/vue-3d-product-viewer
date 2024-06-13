@@ -3,9 +3,8 @@
     3D Product viewer dev
   </h1>
   <product-viewer
-    class="product-viewer-wrapper"
+    class="product-viewer"
     :images="images"
-    :sensitivity="5"
     :speed="30"
     :auto-start="true"
   />
@@ -35,7 +34,7 @@ export default defineComponent({
 </script>
 
 <style>
-.product-viewer-wrapper {
+.product-viewer {
   width: 50rem;
   height: 30rem;
   cursor: grab;

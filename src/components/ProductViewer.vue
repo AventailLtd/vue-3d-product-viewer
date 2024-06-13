@@ -8,7 +8,7 @@
     @touchstart="startDrag"
     @touchend="stopDrag"
   >
-    <div class="pointer-events-none">
+    <div class="product-viewer-wrapper">
       <img
         v-for="(image, index) in images"
         :key="index"
@@ -34,7 +34,7 @@ export default defineComponent({
       required: true,
     },
     /**
-     * Rolling speed
+     * Rolling speed (degree/sec)
      */
     speed: {
       type: Number,
@@ -105,8 +105,8 @@ export default defineComponent({
       return index >= 0 ? index : this.images.length + index
     },
     rotateDensity() {
-      // TODO: video density degree
-      return 20
+      // 24 frames per second is continuous for human eye
+      return 360 * 24 / this.images.length
     },
   },
   mounted() {
@@ -122,7 +122,8 @@ export default defineComponent({
     startAutoRolling(autoSlow: boolean = true): void {
       this.autoStartInterval = setInterval(() => {
         if (autoSlow) {
-          this.speedData *= 0.98
+          this.speedData *= 0.99
+          // if speed is under rotateDensity, then stop because rotate animation under rotateDensity is lagging
           if (Math.abs(this.speedData) < this.rotateDensity) {
             this.clearIntervals()
             return
@@ -137,7 +138,15 @@ export default defineComponent({
     startDrag(event: MouseEvent | TouchEvent): void {
       this.startAngle = this.angle
       this.clearIntervals()
-      this.startX = 'clientX' in event ? event.clientX : event.touches[0].clientX
+
+      if (event instanceof MouseEvent) {
+        this.startX = event.clientX
+      } else if (event instanceof TouchEvent) {
+        this.startX = event.touches[0].clientX
+      } else {
+        throw new Error('Unknown event type')
+      }
+
       const viewer = this.$refs.productViewer as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
       viewer.addEventListener('touchmove', this.onDrag)
@@ -159,8 +168,16 @@ export default defineComponent({
         return
       }
 
-      const clientX = 'clientX' in event ? event.clientX : event.touches[0].clientX
+      let clientX
+      if (event instanceof MouseEvent) {
+        clientX = event.clientX
+      } else if (event instanceof TouchEvent) {
+        clientX = event.changedTouches[0].clientX
+      } else {
+        throw new Error('Unknown event type')
+      }
 
+      // 5 is a magic number to make the speed more realistic
       this.speedData = (clientX - this.startX) / elapsedSec * -1 / 5
       this.startAutoRolling()
     },
@@ -214,7 +231,7 @@ export default defineComponent({
 </script>
 
 <style lang="css" scoped>
-.pointer-events-none {
+.product-viewer-wrapper {
   position: relative;
   pointer-events: none;
   user-select: none;
