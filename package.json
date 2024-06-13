@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/vue-3d-product-viewer.js",
       "types": "./dist/index.d.ts"
+    },
+    "./dist/style.css": {
+      "import": "./dist/style.css",
+      "require": "./dist/style.css"
     }
   },
   "files": [
