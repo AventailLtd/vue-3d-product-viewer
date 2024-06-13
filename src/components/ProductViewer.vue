@@ -2,13 +2,14 @@
   <div
     v-if="images.length > 0"
     ref="productViewer"
+    class="product-viewer-wrapper"
     @mouseup="stopDrag"
     @mousedown="startDrag"
     @mouseleave="stopDrag"
     @touchstart="startDrag"
     @touchend="stopDrag"
   >
-    <div class="product-viewer-wrapper">
+    <div class="product-viewer-img-wrapper">
       <img
         v-for="(image, index) in images"
         :key="index"
@@ -225,20 +226,23 @@ export default defineComponent({
 
 <style lang="css" scoped>
 .product-viewer-wrapper {
+  cursor: grab;
+}
+
+.product-viewer-img-wrapper {
   position: relative;
   pointer-events: none;
   user-select: none;
-  width: 100%;
-  height: 100%;
 
   img {
+    position: relative;
     max-width: 100%;
-    position: absolute;
     top: 0;
   }
 
   .hide-product-viewer-image {
     opacity: 0;
+    position: absolute;
   }
 }
 </style>
