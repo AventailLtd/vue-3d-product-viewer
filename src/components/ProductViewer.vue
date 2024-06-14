@@ -157,6 +157,12 @@ export default defineComponent({
 
       const elapsedSec = (this.mouseUpTimer - this.mouseDownTimer) / 1000
 
+      if (elapsedSec === 0) {
+        // filtering short clicks
+        // if elapsedSec is 0, then we can't divide with 0
+        return
+      }
+
       if (elapsedSec > this.swipeSensitivity) {
         // not swiped after a time
         return

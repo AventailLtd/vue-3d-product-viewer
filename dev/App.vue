@@ -3,6 +3,7 @@
     3D Product viewer dev
   </h1>
   <product-viewer
+    class="width-fix"
     :images="images"
     :speed="30"
     :auto-start="true"
@@ -31,3 +32,9 @@ export default defineComponent({
   },
 })
 </script>
+
+<style>
+.width-fix {
+  width: 20rem;
+}
+</style>
