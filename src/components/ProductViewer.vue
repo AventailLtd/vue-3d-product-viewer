@@ -5,7 +5,7 @@
     class="product-viewer-wrapper"
     @mouseup="stopDrag"
     @mousedown="startDrag"
-    @mouseleave="stopDrag"
+    @mouseleave="handleMouseLeave"
     @touchstart="startDrag"
     @touchend="stopDrag"
   >
@@ -54,6 +54,14 @@ export default defineComponent({
     swipeSensitivity: {
       type: Number,
       default: 0.30,
+    },
+    /**
+     * Rotation area fixed means that the product viewer will rolling if the mouse moving only in it's area
+     * On false the rotation will continue when the mouse leaves area
+     */
+    rotationAreaFixed: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
@@ -141,7 +149,7 @@ export default defineComponent({
         throw new Error('Unknown event type')
       }
 
-      const viewer = this.$refs.productViewer as HTMLElement
+      const viewer = this.rotationAreaFixed ? this.$refs.productViewer as HTMLElement : document.body as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
       viewer.addEventListener('touchmove', this.onDrag)
       this.mouseDownTimer = performance.now()
@@ -150,7 +158,7 @@ export default defineComponent({
      * Stops dragging
      */
     stopDrag(event: MouseEvent | TouchEvent): void {
-      const viewer = this.$refs.productViewer as HTMLElement
+      const viewer = this.rotationAreaFixed ? this.$refs.productViewer as HTMLElement : document.body as HTMLElement
       viewer.removeEventListener('mousemove', this.onDrag)
       viewer.removeEventListener('touchmove', this.onDrag)
       this.mouseUpTimer = performance.now()
@@ -180,6 +188,14 @@ export default defineComponent({
       // 5 is a magic number to make the speed more realistic
       this.speedData = (clientX - this.startX) / elapsedSec * -1 / 5
       this.startAutoRolling()
+    },
+    /**
+     * Handling if the mouse leaves product viewer area
+     */
+    handleMouseLeave() {
+      // every time when we are leaving the product-viewer area removing the listener, then adding it again, to not spam it on element
+      document.body.removeEventListener('mouseup', this.stopDrag)
+      document.body.addEventListener('mouseup', this.stopDrag)
     },
     /**
      * Action while dragging
