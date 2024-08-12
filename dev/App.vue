@@ -9,6 +9,7 @@
       :speed="100"
       :auto-start="true"
       :rotation-area-fixed="false"
+      :slider-visible="true"
     />
   </div>
 </template>

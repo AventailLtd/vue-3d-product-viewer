@@ -33,9 +33,11 @@ The ProductViewer creates a rotatable product animation from a collection of ima
 
 ### Props:
 
-| Props            | Type    | Default                          | Description                                                                                           |
-|------------------|---------|----------------------------------|-------------------------------------------------------------------------------------------------------|
-| images           | Array   | required (has not default vaule) | Array of images                                                                                       |
-| speed            | Number  | 20                               | Rolling speed (degree/sec)                                                                            |
-| autoStart        | Boolean | false                            | Starts auto rotating. When the ProductViewer appears on the screen, it automatically starts rotating. |
-| swipeSwnsitivity | Number  | 0.3                              | Seconds, under mousemove is recognized as swipe                                                       |
+| Props             | Type    | Default                          | Description                                                                                           |
+|-------------------|---------|----------------------------------|-------------------------------------------------------------------------------------------------------|
+| images            | Array   | required (has not default vaule) | Array of images                                                                                       |
+| speed             | Number  | 20                               | Rolling speed (degree/sec)                                                                            |
+| autoStart         | Boolean | false                            | Starts auto rotating. When the ProductViewer appears on the screen, it automatically starts rotating. |
+| swipeSensitivity  | Number  | 0.3                              | Seconds, under mousemove is recognized as swipe                                                       |
+| rotationAreaFixed | Boolean | true                             | Rotate is working only if mouse dragged into product viewer area                                      |
+| sliderVisible     | Boolean | true                             | Slider row is another way to rotate the picture. If it's false, the slider won't be visible           |

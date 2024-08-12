@@ -1,21 +1,32 @@
 <template>
-  <div
-    v-if="images.length > 0"
-    ref="productViewer"
-    class="product-viewer-wrapper"
-    @mouseup="stopDrag"
-    @mousedown="startDrag"
-    @mouseleave="handleMouseLeave"
-    @touchstart="startDrag"
-    @touchend="stopDrag"
-  >
-    <div class="product-viewer-img-wrapper">
-      <img
-        v-for="(image, index) in images"
-        :key="index"
-        :class="{'hide-product-viewer-image': currentImageIndex !== index}"
-        :src="image"
-        alt=""
+  <div class="product-viewer-item-group">
+    <div
+      v-if="images.length > 0"
+      ref="productViewer"
+      class="product-viewer-wrapper"
+      @mouseup="stopDrag"
+      @mousedown="startDrag"
+      @mouseleave="handleMouseLeave"
+      @touchstart="startDrag"
+      @touchend="stopDrag"
+    >
+      <div class="product-viewer-img-wrapper">
+        <img
+          v-for="(image, index) in images"
+          :key="index"
+          :class="{'hide-product-viewer-image': currentImageIndex !== index}"
+          :src="image"
+          alt=""
+        >
+      </div>
+    </div>
+    <div v-if="sliderVisible" class="slider-holder">
+      <input
+        v-model="sliderValue"
+        class="slider"
+        type="range"
+        min="0"
+        max="359"
       >
     </div>
   </div>
@@ -63,6 +74,13 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    /**
+     * Is slider visible for scrolling
+     */
+    sliderVisible: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
@@ -99,6 +117,10 @@ export default defineComponent({
        * When mouse button released
        */
       mouseUpTimer: 0 as number,
+      /**
+       * Sliders value
+       */
+      sliderValue: 180 as number,
     }
   },
   computed: {
@@ -112,6 +134,13 @@ export default defineComponent({
     rotateDensity() {
       // 24 frames per second is continuous for human eye
       return 360 * 24 / this.images.length
+    },
+  },
+  watch: {
+    // checking sliders changes, and sets it to the right angel by its value
+    sliderValue(newValue) {
+      this.clearIntervals()
+      this.angle = newValue
     },
   },
   mounted() {
@@ -266,6 +295,35 @@ export default defineComponent({
   .hide-product-viewer-image {
     opacity: 0;
     position: absolute;
+  }
+}
+
+.product-viewer-item-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .slider-holder {
+    width: 100%;
+    justify-content: center;
+
+    .slider {
+      appearance: none; /* removes browser-specific styling */
+      width: 100%; /* width of slider */
+      height: 5px; /* height of slider */
+      background: #DCDCDC ; /* grey background */
+      outline: none; /* remove outline */
+      border-radius: 50px; /* round corners */
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none; /* removes browser-specific styling */
+      width: 15px; /* handle width */
+      height: 10px; /* handle height */
+      border-radius: 10px; /* make it circular */
+      background: #20a84b; /* green color */
+      cursor: pointer; /* cursor on hover */
+    }
   }
 }
 </style>
