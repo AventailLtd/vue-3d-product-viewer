@@ -2,12 +2,16 @@
   <h1>
     3D Product viewer dev
   </h1>
-  <product-viewer
-    class="width-fix"
-    :images="images"
-    :speed="30"
-    :auto-start="true"
-  />
+  <div style="margin-left: 200px;">
+    <product-viewer
+      class="width-fix"
+      :images="images"
+      :speed="100"
+      :auto-start="true"
+      :rotation-area-fixed="false"
+      :slider-visible="true"
+    />
+  </div>
 </template>
 
 <script lang="ts">
