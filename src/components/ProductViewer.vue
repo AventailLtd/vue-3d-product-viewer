@@ -1,21 +1,32 @@
 <template>
-  <div
-    v-if="images.length > 0"
-    ref="productViewer"
-    class="product-viewer-wrapper"
-    @mouseup="stopDrag"
-    @mousedown="startDrag"
-    @mouseleave="stopDrag"
-    @touchstart="startDrag"
-    @touchend="stopDrag"
-  >
-    <div class="product-viewer-img-wrapper">
-      <img
-        v-for="(image, index) in images"
-        :key="index"
-        :class="{'hide-product-viewer-image': currentImageIndex !== index}"
-        :src="image"
-        alt=""
+  <div class="product-viewer-item-group">
+    <div
+      v-if="images.length > 0"
+      ref="productViewer"
+      class="product-viewer-wrapper"
+      @mouseup="stopDrag"
+      @mousedown="startDrag"
+      @mouseleave="handleMouseLeave"
+      @touchstart="startDrag"
+      @touchend="stopDrag"
+    >
+      <div class="product-viewer-img-wrapper">
+        <img
+          v-for="(image, index) in images"
+          :key="index"
+          :class="{'hide-product-viewer-image': currentImageIndex !== index}"
+          :src="image"
+          alt=""
+        >
+      </div>
+    </div>
+    <div v-if="sliderVisible" class="slider-holder">
+      <input
+        v-model="sliderValue"
+        class="slider"
+        type="range"
+        min="0"
+        max="359"
       >
     </div>
   </div>
@@ -55,6 +66,21 @@ export default defineComponent({
       type: Number,
       default: 0.30,
     },
+    /**
+     * Rotation area fixed means that the product viewer will rolling if the mouse moving only in it's area
+     * On false the rotation will continue when the mouse leaves area
+     */
+    rotationAreaFixed: {
+      type: Boolean,
+      default: true,
+    },
+    /**
+     * Is slider visible for scrolling
+     */
+    sliderVisible: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
@@ -91,6 +117,10 @@ export default defineComponent({
        * When mouse button released
        */
       mouseUpTimer: 0 as number,
+      /**
+       * Sliders value
+       */
+      sliderValue: 180 as number,
     }
   },
   computed: {
@@ -104,6 +134,13 @@ export default defineComponent({
     rotateDensity() {
       // 24 frames per second is continuous for human eye
       return 360 * 24 / this.images.length
+    },
+  },
+  watch: {
+    // checking sliders changes, and sets it to the right angel by its value
+    sliderValue(newValue) {
+      this.clearIntervals()
+      this.angle = newValue
     },
   },
   mounted() {
@@ -141,7 +178,7 @@ export default defineComponent({
         throw new Error('Unknown event type')
       }
 
-      const viewer = this.$refs.productViewer as HTMLElement
+      const viewer = this.rotationAreaFixed ? this.$refs.productViewer as HTMLElement : document.body as HTMLElement
       viewer.addEventListener('mousemove', this.onDrag)
       viewer.addEventListener('touchmove', this.onDrag)
       this.mouseDownTimer = performance.now()
@@ -150,7 +187,7 @@ export default defineComponent({
      * Stops dragging
      */
     stopDrag(event: MouseEvent | TouchEvent): void {
-      const viewer = this.$refs.productViewer as HTMLElement
+      const viewer = this.rotationAreaFixed ? this.$refs.productViewer as HTMLElement : document.body as HTMLElement
       viewer.removeEventListener('mousemove', this.onDrag)
       viewer.removeEventListener('touchmove', this.onDrag)
       this.mouseUpTimer = performance.now()
@@ -180,6 +217,14 @@ export default defineComponent({
       // 5 is a magic number to make the speed more realistic
       this.speedData = (clientX - this.startX) / elapsedSec * -1 / 5
       this.startAutoRolling()
+    },
+    /**
+     * Handling if the mouse leaves product viewer area
+     */
+    handleMouseLeave() {
+      // every time when we are leaving the product-viewer area removing the listener, then adding it again, to not spam it on element
+      document.body.removeEventListener('mouseup', this.stopDrag)
+      document.body.addEventListener('mouseup', this.stopDrag)
     },
     /**
      * Action while dragging
@@ -250,6 +295,35 @@ export default defineComponent({
   .hide-product-viewer-image {
     opacity: 0;
     position: absolute;
+  }
+}
+
+.product-viewer-item-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .slider-holder {
+    width: 100%;
+    justify-content: center;
+
+    .slider {
+      appearance: none; /* removes browser-specific styling */
+      width: 100%; /* width of slider */
+      height: 5px; /* height of slider */
+      background: #DCDCDC ; /* grey background */
+      outline: none; /* remove outline */
+      border-radius: 50px; /* round corners */
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none; /* removes browser-specific styling */
+      width: 15px; /* handle width */
+      height: 10px; /* handle height */
+      border-radius: 10px; /* make it circular */
+      background: #20a84b; /* green color */
+      cursor: pointer; /* cursor on hover */
+    }
   }
 }
 </style>

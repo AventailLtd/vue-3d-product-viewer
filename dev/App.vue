@@ -7,6 +7,7 @@
       :images="images"
       :speed="30"
       :auto-start="true"
+      :rotation-area-fixed="false"
     />
   </div>
 </template>
