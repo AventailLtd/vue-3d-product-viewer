@@ -1,33 +1,39 @@
 <template>
-  <div class="product-viewer-item-group">
-    <div
-      v-if="images.length > 0"
-      ref="productViewer"
-      class="product-viewer-wrapper"
-      @mouseup="stopDrag"
-      @mousedown="startDrag"
-      @mouseleave="handleMouseLeave"
-      @touchstart="startDrag"
-      @touchend="stopDrag"
-    >
-      <div class="product-viewer-img-wrapper">
-        <img
-          v-for="(image, index) in images"
-          :key="index"
-          :class="{'hide-product-viewer-image': currentImageIndex !== index}"
-          :src="image"
-          alt=""
+  <div>
+    <div v-if="!loaded" class="loader-wrapper">
+      <div class="loader" />
+    </div>
+    <div v-show="loaded" class="product-viewer-item-group">
+      <div
+        v-if="images.length > 0"
+        ref="productViewer"
+        class="product-viewer-wrapper"
+        @mouseup="stopDrag"
+        @mousedown="startDrag"
+        @mouseleave="handleMouseLeave"
+        @touchstart="startDrag"
+        @touchend="stopDrag"
+      >
+        <div class="product-viewer-img-wrapper">
+          <img
+            v-for="(image, index) in images"
+            :key="index"
+            :class="{'hide-product-viewer-image': currentImageIndex !== index}"
+            :src="image"
+            alt=""
+            @load="imageLoadHandler"
+          >
+        </div>
+      </div>
+      <div v-if="sliderVisible" class="slider-holder">
+        <input
+          v-model="sliderValue"
+          class="slider"
+          type="range"
+          min="0"
+          max="359"
         >
       </div>
-    </div>
-    <div v-if="sliderVisible" class="slider-holder">
-      <input
-        v-model="sliderValue"
-        class="slider"
-        type="range"
-        min="0"
-        max="359"
-      >
     </div>
   </div>
 </template>
@@ -121,6 +127,10 @@ export default defineComponent({
        * Sliders value
        */
       sliderValue: 180 as number,
+      /**
+       * Number of loaded images.
+       */
+      numLoaded: 0 as number,
     }
   },
   computed: {
@@ -135,6 +145,9 @@ export default defineComponent({
       // 24 frames per second is continuous for human eye
       return 360 * 24 / this.images.length
     },
+    loaded() {
+      return this.numLoaded === this.images.length
+    },
   },
   watch: {
     // checking sliders changes, and sets it to the right angel by its value
@@ -144,9 +157,17 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.createObserver()
+    if (this.loaded) {
+      this.createObserver()
+    }
   },
   methods: {
+    /**
+     * Image load handler for loader
+     */
+    imageLoadHandler() {
+      this.numLoaded = this.numLoaded + 1
+    },
     /**
      * Starts the view automatically
      */
@@ -276,6 +297,25 @@ export default defineComponent({
 </script>
 
 <style lang="css" scoped>
+.loader-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  .loader {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #000;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    animation: spin 1s linear infinite;
+  }
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .product-viewer-wrapper {
   cursor: grab;
 }
