@@ -10,6 +10,7 @@
       @mouseup="stopDrag"
       @mousedown="startDrag"
       @mouseleave="handleMouseLeave"
+      @mouseenter="handleMouseEnter"
       @touchstart="startDrag"
       @touchend="stopDrag"
     >
@@ -186,6 +187,10 @@ export default defineComponent({
      * Starts dragging
      */
     startDrag(event: MouseEvent | TouchEvent): void {
+      // disable text selecting on body with cursor. If it's not disabled it can cause bugs, like dragging selected picture and text
+      // instead of spinning the item
+      document.body.style.userSelect = 'none'
+
       this.startAngle = this.angle
       this.clearIntervals()
 
@@ -206,6 +211,9 @@ export default defineComponent({
      * Stops dragging
      */
     stopDrag(event: MouseEvent | TouchEvent): void {
+      // enable text selecting on body with cursor
+      document.body.style.userSelect = ''
+
       const viewer = this.rotationAreaFixed ? this.$refs.productViewer as HTMLElement : document.body as HTMLElement
       viewer.removeEventListener('mousemove', this.onDrag)
       viewer.removeEventListener('touchmove', this.onDrag)
@@ -241,9 +249,13 @@ export default defineComponent({
      * Handling if the mouse leaves product viewer area
      */
     handleMouseLeave() {
-      // every time when we are leaving the product-viewer area removing the listener, then adding it again, to not spam it on element
-      document.body.removeEventListener('mouseup', this.stopDrag)
       document.body.addEventListener('mouseup', this.stopDrag)
+    },
+    /**
+     * Handling mouse enter to product viewer area
+     */
+    handleMouseEnter() {
+      document.body.removeEventListener('mouseup', this.stopDrag)
     },
     /**
      * Action while dragging
