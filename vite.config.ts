@@ -12,6 +12,8 @@ export default defineConfig({
       formats: ['es'],
       name: 'Vue3DProductViewer',
       fileName: 'vue-3d-product-viewer',
+      // vite 6 óta a csomag nevét kapná a css, a felhasználók viszont a dist/style.css-t importálják (package.json exports)
+      cssFileName: 'style',
     },
     rollupOptions: {
       external: [
